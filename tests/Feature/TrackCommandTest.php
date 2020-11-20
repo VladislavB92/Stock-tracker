@@ -2,17 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Models\Stock;
 use App\Models\Product;
 use App\Models\Retailer;
-use App\Models\Stock;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
+use Illuminate\Support\Facades\Http;
 
-class ExampleTest extends TestCase
+class TrackCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function checkStockForProductAtRetailers()
+    function trackProductStock()
     {
         $switch = Product::created(['name' => 'Nintendo Switch']);
 
@@ -24,11 +26,19 @@ class ExampleTest extends TestCase
             'price' => 1000,
             'url' => 'http://foo.com',
             'sku' => '12345',
-            'ins_stock' => true
+            'ins_stock' => false
         ]);
 
         $bestBuy->addStock($switch, $stock);
 
-        $this->assertTrue($switch->inStock());
+        $this->assertFalse($stock->fresh()->in_stock);
+
+        Http::fake(function () {
+            return ['foo' => 'bar'];
+        });
+
+        $this->artisan('track');
+
+        $this->assertTrue($stock->fresh()->in_stock);
     }
 }
